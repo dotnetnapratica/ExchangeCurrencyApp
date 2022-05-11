@@ -1,0 +1,85 @@
+﻿@page "/"
+
+@inject ExchangeCurrencyApp.Services.IExchangeCurrencyService ExchangeCurrencyService
+
+<PageTitle>AppConvertUsdToBrl</PageTitle>
+
+<h1>Convertendo USD para BRL</h1>
+
+
+<div class="row g-2 align-items-center">
+    <div class="col-sm-7">
+        <label class="sr-only">Valor em dolar</label>
+        <div class="input-group mb-2 mr-sm-2">
+            <div class="input-group-prepend">
+                <div class="input-group-text">$</div>
+            </div>
+            <input @bind-value="UsdValue" type="number" class="form-control" />
+        </div>
+    </div>
+    <div class="col-sm">
+        <button @onclick="ConvertToBrl" disabled="@IsLoading" style="margin-top: 15px" class="btn btn-primary">
+            Converter para real
+        </button>
+    </div>
+</div>
+
+@if(IsLoading)
+{
+    <div class="alert alert-secondary">
+        Carregando...
+    </div>
+}
+else
+{
+    if(BrlValue.HasValue)
+    {
+        <div style="font-size: 40px" class="alert alert-success">
+            <center>Valor em BRL: R$@BrlValue?.ToString("0.##")</center>
+        </div>
+    }
+}
+
+@if(string.IsNullOrWhiteSpace(ErrorMessage) is false)
+{
+    <div class="alert alert-danger">
+        @ErrorMessage
+    </div>
+}
+
+@code{
+    bool IsLoading;
+    double? UsdValue;
+    double? BrlValue;
+    string ErrorMessage;
+
+    async Task ConvertToBrl()
+    {
+        if(UsdValue is null || UsdValue <= 0)
+        {
+            BrlValue = null;
+            ErrorMessage = "Valor em dolar deve ser maior que 0.";
+            StateHasChanged();
+            return;
+        }
+
+        ErrorMessage = string.Empty;
+        IsLoading = true;
+        BrlValue = null;
+        StateHasChanged();
+        try
+        {
+            BrlValue = await ExchangeCurrencyService.ConvertUsdToBrl(UsdValue.Value);
+            ErrorMessage = string.Empty;
+        }
+        catch(Exception ex)
+        {
+            ErrorMessage = ex.Message;
+        }
+        finally
+        {
+            IsLoading = false;
+            StateHasChanged();
+        }
+    }
+}
